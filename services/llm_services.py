@@ -1,4 +1,8 @@
+# services/llm_services.py => defines the LLMService class which is responsible for interacting with the language model (LM Studio in this case). It has a method to generate responses based on a system prompt and user message. 
+# This service layer isolates the LM logic from the API routes, making it easier to swap out the model provider or test the agent core without relying on the actual LM """
+
 import httpx
+
 
 ## Service layer isolates LM logic from API routes.
 # Makes model provider swappable and easier to test.
