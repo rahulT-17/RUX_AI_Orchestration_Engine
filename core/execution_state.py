@@ -16,10 +16,18 @@ class ExecutionState:
         self.user_id = user_id
         self.message = message
         
-        self.stage = "INIT"
+        # filled by planner 
+        self.action = None
+        self.parameters = {}
+        
+        # filled by executor
+        
         self.planner_output = None
-        self_validated_params = None
+        self.validated_params = None
         self.tool_result = None
+        
+        # Tracking
+        self.stage = "INIT"
         self.error = None
         self.created_at = datetime.utcnow()
     

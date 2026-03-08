@@ -1,10 +1,15 @@
 # Core / confirmation_manager.py => defines the ConfirmationManager class which is responsible for handling the confirmation process for high-risk actions which is sent by the "Executator" when a tool that requires confirmation is about to be executed. 
 # It manages the pending confirmations in the memory and processes the user's response to either confirm or reject the action.
+import json 
+from repositories.confirmation_repository import ConfirmationRepository
 
 class ConfirmationManager: 
 
-    async def handle(self, state, memory , tools_registry) :
-        pending = await memory.get_pending_confirmation(state.user_id)
+    async def handle(self, state, db, tools_registry) :
+
+        repo = ConfirmationRepository(db)
+
+        pending = await repo.get_pending(state.user_id)
 
         if not pending :
             return None 
@@ -12,20 +17,33 @@ class ConfirmationManager:
         reply = state.message.strip().lower()
 
         if reply == "yes" :
-            tool = tools_registry.get(pending["action"])    
+            tool = tools_registry.get(pending.action)    
+            
+            if not tool :
+                return f"Unknown action '{pending.action}'"
+            
+            parameters = pending.parameters
 
-            parameters = pending["parameters"]
+            # FIX : ENSURES parameters are dict 
+            if isinstance(parameters,str) :
+                try :
+                    parameters = json.loads(parameters)
+                except Exception as e :
+                    return "Stored confirmation parameters are corrupted"
 
-            validated = tool.schema(**parameters)
+            try :
+                validated = tool.schema(**parameters)
+            except Exception as e :
+                return f"Invalid parameters during confirmation, Details : {e} "
+            
+            result = await tool.function(state.user_id, validated, db)
 
-            result = await tool.function(state.user_id, validated)
-
-            await memory.mark_confirmation_executed(pending["confirmation_id"])
+            await repo.mark_executed(pending.confirmation_id)
 
             return result
         
         elif reply == "no" :
-            await memory.mark_confirmation_rejected(pending["confirmation_id"])
+            await repo.mark_rejected(pending.confirmation_id)
             return "Action cancelled as per your request."
         
         else :
