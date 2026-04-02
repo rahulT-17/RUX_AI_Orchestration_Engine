@@ -2,7 +2,13 @@
 
 > A local AI agent that converts natural language into safe, persistent state changes — with deterministic enforcement, self-evaluation, and multi-model critique.
 
+
 ---
+
+## STATUS 
+
+This project is under active development.  
+I am currently refactoring the system toward a modular domain-based architecture, so some parts of the codebase are still evolving.
 
 ## What RUX Is
 
@@ -233,21 +239,24 @@ GET /debug/confidence    → live accuracy metrics by domain
 
 ```bash
 # Clone
-git clone https://github.com/yourusername/rux.git
-cd rux
+git clone https://github.com/rahulT-17/RUX-Orchestration-Engine.git
+cd RUX-Orchestration-Engine
+
+# Create and activate virtual environment
+python -m venv .venv
+
+# Windows PowerShell
+.\.venv\Scripts\Activate.ps1
 
 # Install dependencies
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
-# Configure environment
-cp .env.example .env
-# Set DATABASE_URL and LLM base URL
+# Initialize database tables
+python init_db.py
 
-# Run database migrations
-python -m scripts.init_db
+# Start the app
+python -m uvicorn main:app --reload
 
-# Start
-uvicorn main:app --reload
 ```
 
 ---
@@ -256,7 +265,7 @@ uvicorn main:app --reload
 
 - [ ] Reflection layer — agent challenges past decisions using outcome history
 - [ ] Hybrid memory — short-term + episodic + semantic in one system
-- [ ] Second domain (projects) to prove architecture generalises
+- [ ] Knowledge Domain — capturing reusable facts and context and will be reasoning about it and more 
 - [ ] Cloud deployment
 - [ ] Confidence-triggered automatic second opinion (low accuracy → auto-critique)
 
@@ -271,3 +280,4 @@ The goal was never to build another chatbot wrapper. It was to build the layer u
 ---
 
 *Built as a learning project. Active development.*
+
