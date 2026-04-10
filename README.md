@@ -4,7 +4,7 @@
 
 ## Architecture Snapshot
 
-[RUX architecture](demo/RUX Architecture.png)
+![RUX architecture](demo/RUX_Architecture.png)
 
 
 ```mermaid
