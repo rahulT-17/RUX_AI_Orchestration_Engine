@@ -34,10 +34,13 @@ class ProjectRepository :
         
         return result.scalar_one_or_none() 
     
-    async def delete_project(self, project_id: int):
-        result = await self.db.execute(
-            delete(Project).where(Project.project_id == project_id)
-        )
+    async def delete_project(self, project_id: int, user_id: str | None = None):
+        stmt = delete(Project).where(Project.project_id == project_id)
+        
+        if user_id is not None:
+           stmt = stmt.where(Project.user_id == user_id)
+
+        result = await self.db.execute(stmt)
         await self.db.commit()
         return result.rowcount > 0
 

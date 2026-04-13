@@ -84,13 +84,13 @@ class ExpenseService :
                 "reason" : "Category is required to check budget."
             }
         
+        category = category.strip().lower()
+        
         budget = await self.budget_repo.get_active_budget(
             user_id=user_id,
             category=category,
             today=today
         )
-        
-        print(f"DEBUG BUDGET: {budget} for category={category} today={today}")
 
         if not budget :
             return {

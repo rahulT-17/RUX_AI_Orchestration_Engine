@@ -14,12 +14,18 @@ async def create_project_tool(user_id: str, params: CreateProjectParams, db):
         description=params.description,
     )
 
-    project_id = result.rsplit("ID:", 1)[1].strip()
+    if not isinstance(result, dict) or result.get("status") != "success":
+        error = result.get("error", "Project creation failed") if isinstance(result, dict) else "Project creation failed"
+        return ToolResponse(
+            status=ToolStatus.FAILED,
+            message=error,
+            error=error,
+        )
 
     return ToolResponse(
         status=ToolStatus.SUCCESS,
-        message=result,
-        data={"project_id": project_id},
+        message=result.get("message", "Project created successfully."),
+        data={"project_id": result.get("project_id")},
     )
 
 
@@ -31,17 +37,18 @@ async def delete_project_tool(user_id: str, params: DeleteProjectParams, db):
         name=params.name,
     )
 
-    if isinstance(result, dict) and "error" in result:
+    if not isinstance(result, dict) or result.get("status") != "success":
+        error = result.get("error", "Project deletion failed") if isinstance(result, dict) else "Project deletion failed"
         return ToolResponse(
             status=ToolStatus.FAILED,
-            message=result["error"],
-            error=result["error"],
+            message=error,
+            error=error,
         )
 
     return ToolResponse(
         status=ToolStatus.SUCCESS,
-        message=result,
-        data={"project_id": params.project_id},
+        message=result.get("message", "Project deleted successfully."),
+        data={"project_id": result.get("project_id")},
     )
 
 # Registers project tools with runtime metadata.

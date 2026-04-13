@@ -12,7 +12,11 @@ class ProjectService:
             name=name,
             description=description,
         )
-        return f"Project '{name}' created successfully with ID: {project_id}"
+        return {
+            "status": "success",
+            "message": f"Project '{name}' created successfully with ID: {project_id}",
+            "project_id": project_id,
+        }
 
     # Delete supports direct id deletion or user-scoped name lookup.
     async def delete_project(
@@ -23,21 +27,36 @@ class ProjectService:
     ):
         # Deletion by ID is straightforward and prioritized if provided.
         if project_id is not None:
-            success = await self.repository.delete_project(project_id=project_id)
-            if not success:
-                return {"error": f"No project found with ID {project_id}"}
+            success = await self.repository.delete_project(
+                project_id=project_id,
+                user_id=user_id,
+            )
             
-            return f"Project with ID {project_id} deleted successfully"
+            if not success:
+                return {"status": "failed", "error": f"No project found with ID {project_id}"}
+            
+            return {
+                "status": "success",
+                "message": f"Project with ID {project_id} deleted successfully",
+                "project_id": project_id,
+            }
 
         # If no ID, attempt deletion by name within the user's projects.
         if name:
             project = await self.repository.get_project(user_id=user_id, name=name)
             if not project:
-                return {"error": f"No project found with name '{name}' for the user."}
+                return {"status": "failed", "error": f"No project found with name '{name}' for the user."}
 
-            await self.repository.delete_project(project.project_id)
-            return f"Project '{name}' deleted successfully"
+            await self.repository.delete_project(
+                project_id=project.project_id,
+                user_id=user_id,
+            )
+            return {
+                "status": "success",
+                "message": f"Project '{name}' deleted successfully",
+                "project_id": project.project_id,
+            }
 
-        return {"error": "Provide either project_id or name to delete a project."}
+        return {"status": "failed", "error": "Provide either project_id or name to delete a project."}
         
         
