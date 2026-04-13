@@ -22,16 +22,18 @@ class Orchestrator:
         state = ExecutionState(user_id , message)
         
 
-        # Confirmation handling logic : Check if there is a pending confirmation for the user, if yes, we will handle the confirmation response and return the result without going through the planning and execution stages.
+        # Confirmation handling runs before planning. If the user is replying to an
+        # earlier high-risk action, we should resume that path instead of planning a new one.
         confirm_result = await self.confirmation_manager.handle(
-            state , db , self.executor.tools_registry)
+            state,
+            db,
+            self.executor,
+        )
         
-        if confirm_result :            # if there was a pending confirmation and we handled it, we will return the result of the confirmation handling (either the tool execution result or a cancellation message) without proceeding to planning and execution stages.
-            return {
-                "response": confirm_result,
-                "run_id": None,
-                "action": "confirmation"
-            }
+        # Confirmation manager now returns a full response payload, including a run_id
+        # when a confirmed action actually executes through the shared executor pipeline.
+        if confirm_result:
+            return confirm_result
         
         # Step 2 : Planning stage : Call the planner to analyze the user message and determine if any action is required, the planner will return the parsed action and parameters if an action is required, or None if no action is required and the message should be treated as a normal reply.
         state , normal_reply = await self.planner.plan(state)

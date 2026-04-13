@@ -1,6 +1,6 @@
 # Decision Engine for evaluating and selecting the best course of action :
 
-from services.critic_service import CriticService
+from core.tool_response import ToolResponse, ToolStatus
 
 class DecisionEngine :
 
@@ -8,24 +8,25 @@ class DecisionEngine :
         self.critic_service = critic_service
 
 
-    async def evaluate(self, user_id, message, domain, task_type, result) :
-
+    async def evaluate(self, user_id, message, domain, task_type, result: ToolResponse):
         """
-        Generates system reasoning and LLM-based critique for the given user message, action, and tool result."""
-
-        # deterministic reasoning :
+        Generates system reasoning and LLM-based critique for the given
+        user message, classified task, and normalized tool result.
+        """
+        
+        # Deterministic reasoning runs first so we always have a local explanation path.
         system_analysis = await self.system_reasoning(domain, task_type, result)
 
-        # LLM based critique :
+        # Critic runs as a second opinion layer for important domains.
         critic_analysis = None
-        
+
         # Only call critic for important domains
         if domain in ["expense", "project"] :
             critic_analysis = await self.critic_service.critique(
                 message,
                 domain,
                 task_type,
-                result
+                result.to_dict(),
             )
     
         return {
@@ -33,41 +34,46 @@ class DecisionEngine :
             "critic_analysis" : critic_analysis
         }
     
-    async def system_reasoning(self, domain, task_type, result) :
-
-        status = result.get("status") if isinstance(result, dict) else None
+    async def system_reasoning(self, domain, task_type, result: ToolResponse) :
 
         """
-        Deterministic reasoning based on predefined rules for specific domains and task types."""
+        Deterministic reasoning based on normalized ToolResponse.
+        This keeps rule-based explanations separate from LLM critique.
+        """
 
         if domain == "expense" :
              
             if task_type == "log" :
-                if status == "logged_with_warning" :
-                    return f"Warning: {result.get('reason')} — {result.get('attempted_total')} of {result.get('budget')} budget used."
+                if result.status == ToolStatus.PARTIAL :
+                    warning = None 
+                    if result.metadata :
+                        warning = result.metadata.get("warning")
+                    return warning or result.message 
                 
-                elif status == "rejected" :
-                    return f"Expense rejected: {result.get('reason')} — {result.get('attempted_total')} of {result.get('budget')} budget used."
-                return None # clean log no observation needed
+                if result.status == ToolStatus.FAILED:
+                    return result.message
+                return None
             
-            elif task_type == "set_budget":
-                return "Budget set. Future expenses in this category will be validated against it."
+            elif task_type == "set_budget" :
+                if result.status == ToolStatus.SUCCESS :
+                    return "Budget set. Future expenses in this category will be validated against it."
+                return result.message 
             
             elif task_type == "analyze" :
-                # raw dict came through somehow
-                if isinstance(result,dict):
-                    return f"Analysis complete for {result.get('category', 'all categories')} over {result.get('period', 'all time')}."
-                return None  # already a formatted string, nothing to add
+                if result.status == ToolStatus.SUCCESS and result.data :
+                    category= result.data.get("category", "all categories")
+                    period = result.data.get("period", "all time")
+                    return f"Analysis complete for {category} over {period}."
+                return None
             
             elif task_type == "get_budget" :
-                return None # result already speaks for itself
+                return None 
             
         if domain == "project" :
-            if task_type == "create_project" :
-                return None # creation successful, no observation needed.
+            if task_type == "create_project":
+                return None
 
-            elif task_type == "delete_project" :
+            elif task_type == "delete_project":
                 return "Project deletion is irreversible."
-        
+
         return None
-                
