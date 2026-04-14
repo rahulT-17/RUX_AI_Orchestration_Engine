@@ -2,7 +2,7 @@
 # such as creating new confirmations, retrieving existing ones, and updating confirmation status.
 
 from sqlalchemy import select, update
-from models import Confirmation
+from models import Confirmation, ConfirmationStatus
 
 
 class ConfirmationRepository:
@@ -14,7 +14,7 @@ class ConfirmationRepository:
         result = await self.db.execute(
             select(Confirmation).where(
                 Confirmation.user_id == user_id,
-                Confirmation.status == "pending"
+                Confirmation.status == ConfirmationStatus.pending
             )
             .order_by(Confirmation.created_at.desc())
             .limit(1)
@@ -38,7 +38,7 @@ class ConfirmationRepository:
         await self.db.execute(
             update(Confirmation)
             .where(Confirmation.confirmation_id == confirmation_id)
-            .values(status="executed")
+            .values(status=ConfirmationStatus.executed)
         )
         await self.db.commit()
 
@@ -46,6 +46,6 @@ class ConfirmationRepository:
         await self.db.execute(
             update(Confirmation)
             .where(Confirmation.confirmation_id == confirmation_id)
-            .values(status="rejected")
+            .values(status=ConfirmationStatus.rejected)
         )
         await self.db.commit()

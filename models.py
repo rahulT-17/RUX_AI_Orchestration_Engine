@@ -49,8 +49,17 @@ class Confirmation(Base) :
     parameters = Column(JSONB, nullable=True) # Store parameters as JSON string
     original_message = Column(Text, nullable=True) # Store the original message that triggered the confirmation request
     
-    status = Column(SAEnum(ConfirmationStatus), nullable=False, default=ConfirmationStatus.pending) 
-    #         ^ only "pending", "executed", "rejected" allowed — DB rejects anything else
+    status = Column(
+        SAEnum(
+            ConfirmationStatus,
+            name="confirmationstatus",
+            values_callable=lambda e: [item.value for item in e],
+            native_enum=True,
+        ),
+        nullable=False,
+        default=ConfirmationStatus.pending,
+    )
+         
     created_at = Column(DateTime(timezone=True), server_default=func.now()) # Store the creation time of the confirmation request
 
     user = relationship("User" , backref="confirmations")
