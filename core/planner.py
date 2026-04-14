@@ -123,7 +123,7 @@ expense_manager (get_budget):
 "action": "expense_manager",
 "parameters": {
     "action": "get_budget",
-    "category": string (optional)
+    "category": string (required)
 }
 }
 

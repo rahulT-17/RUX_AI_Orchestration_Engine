@@ -2,6 +2,7 @@ import asyncio
 import uuid
 from datetime import date, timedelta
 
+import pytest
 from sqlalchemy import delete
 
 from core.tools_registry import bulid_tools_registry
@@ -30,6 +31,32 @@ async def _ensure_tables(engine, Base) -> None:
 
 def test_expense_tools_smoke():
     asyncio.run(_test_expense_tools_smoke())
+
+
+def test_set_budget_requires_category():
+    with pytest.raises(ValueError, match="Missing required fields for set_budget"):
+        ExpenseManagerParams(
+            action="set_budget",
+            budget=500.0,
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=30),
+        )
+
+
+def test_get_budget_rejects_write_fields():
+    with pytest.raises(ValueError, match="Fields not allowed for get_budget"):
+        ExpenseManagerParams(
+            action="get_budget",
+            category="food",
+            budget=500.0,
+        )
+
+
+def test_get_budget_requires_category():
+    with pytest.raises(ValueError, match="Missing required fields for get_budget"):
+        ExpenseManagerParams(
+            action="get_budget",
+        )
 
 
 async def _test_expense_tools_smoke():

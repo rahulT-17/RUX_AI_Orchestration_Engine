@@ -168,7 +168,10 @@ class Executor:
         try:
             validated = tool.schema(**parameters)
         except Exception as e:
-            return f"Error: Invalid parameters for action '{action_name}'. Details: {str(e)}"
+            return (
+                f"Error: Invalid parameters for action '{action_name}'. "
+                f"Details: {str(e)} Please clarify your request and try again."
+            )
 
         # 4) High-risk tools pause here and store a pending confirmation.
         # The actual confirmed execution will later resume through confirmation_manager
