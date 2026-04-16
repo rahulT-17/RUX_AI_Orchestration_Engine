@@ -5,6 +5,9 @@ from fastapi import APIRouter , Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+# auth 
+from core.auth import verify_api_key
+
 from services.confidence_service import ConfidenceService
 
 from database import get_db
@@ -12,7 +15,11 @@ from models import AgentRun, Agent_Outcomes
 
 
 
-router = APIRouter(prefix="/debug", tags=["Observability"])    # This tag is used for documentation purposes; it groups the endpoints under the 'debug' section in the API docs
+router = APIRouter(
+    prefix="/debug", 
+    tags=["Observability"],
+    dependencies=[Depends(verify_api_key)],
+   )  
 
 @router.get("/runs")
 async def get_recent_runs(limit: int = 20, db: AsyncSession = Depends(get_db)):

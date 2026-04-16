@@ -4,6 +4,9 @@
 from fastapi import APIRouter , Depends, HTTPException
 from pydantic import BaseModel
 
+# auth 
+from core.auth import verify_api_key
+
 # Importing the Orchestrator and its dependencies :
 from services.llm_services import LLMService
 from core.orchestrator import Orchestrator
@@ -12,6 +15,8 @@ from core.executor import Executor
 from core.confirmation_manager import ConfirmationManager
 from core.tools_registry import bulid_tools_registry
 from core.config import LM_STUDIO_URL, PLANNER_MODEL, CRITIC_MODEL
+
+
 
 # Repositories for handling database interactions related to agent runs and outcomes :
 from repositories.agent_outcomes_repository import AgentOutcomesRepository
@@ -56,7 +61,8 @@ and returns the agent's response.
 @router.post("/chat") 
 async def chat(
     request : ChatRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    _auth: None = Depends(verify_api_key),
 ):
     """ This is the main chat endpoint. It receives a user message, passes it to the agent core,
       and returns the agent's response. """
@@ -98,7 +104,8 @@ class FeedbackRequest(BaseModel) :
 @router.post("/feedback")
 async def record_feedback(
     request : FeedbackRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    _auth: None = Depends(verify_api_key),
 ) :
     ''' This endpoint will receive feedback from the user regarding a specific agent run, and it will record that feedback in the database. '''
     
