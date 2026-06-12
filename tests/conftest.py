@@ -32,7 +32,7 @@ def event_loop():
     loop.close()
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def create_tables():
     from database import engine, Base
     # Ensures tables exist in the current DB
